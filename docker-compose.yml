@@ -1,0 +1,10 @@
+version: "3.3"
+
+services:
+  parkinglistservice:
+    container_name: "parkinglistservice"
+    build: "."
+    ports:
+      - "8000:8000"
+    environment:
+      SERVE_REST_ADDRESS: ":8000"

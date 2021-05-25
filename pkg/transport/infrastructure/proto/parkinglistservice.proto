@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package parkinglistservice;
+
+option go_package = ".;proto";
+
+message GetParkingRequest {
+  int64 id = 1;
+}
+
+message GetParkingResponse {
+  string title = 1;
+  string description = 2;
+  string location = 3;
+  int64 available_slots = 4;
+  int64 reserved_slots = 5;
+}
+
+service ParkingListService {
+  rpc GetParking (GetParkingRequest) returns (GetParkingResponse) {};
+}
