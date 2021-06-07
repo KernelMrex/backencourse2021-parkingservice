@@ -10,7 +10,10 @@ build:
 	docker-compose build
 
 run:
-	docker-compose up
+	docker-compose up -d
 
 go-test:
 	go test ./...
+
+stop:
+	docker-compose down

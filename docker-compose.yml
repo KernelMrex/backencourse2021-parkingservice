@@ -7,4 +7,4 @@ services:
     ports:
       - "8000:8000"
     environment:
-      SERVE_REST_ADDRESS: ":8000"
+      SERVE_ADDRESS: ":8000"

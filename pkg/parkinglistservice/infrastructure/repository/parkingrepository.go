@@ -10,10 +10,10 @@ type parkingRepository struct {
 	db *sql.DB
 }
 
-func NewParkingRepository(db *sql.DB) model.ParkingRepository {
+func NewParkingRepository(db *sql.DB) *parkingRepository {
 	return &parkingRepository{db: db}
 }
 
-func (pr *parkingRepository) Get(id uuid.UUID) (*model.Parking, error) {
+func (pr *parkingRepository) Get(_ uuid.UUID) (*model.Parking, error) {
 	return nil, nil
 }
