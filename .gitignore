@@ -1,3 +1,5 @@
 /.idea
 /bin/parkinglistservice
 /go.sum
+
+*.pb.go
