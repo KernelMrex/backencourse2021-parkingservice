@@ -21,8 +21,8 @@ type parkingData struct {
 	Coordinates string
 }
 
-func (pr *parkingRepository) Get(uuid uuid.UUID) (*model.Parking, error) {
-	row := pr.db.QueryRow("SELECT `name`, `description`, `coordinates` FROM `parking` WHERE `id`=?", uuid.String())
+func (pr *parkingRepository) Get(id uuid.UUID) (*model.Parking, error) {
+	row := pr.db.QueryRow("SELECT `name`, `description`, `coordinates` FROM `parking` WHERE `id`=?", id.String())
 	parking := &parkingData{}
 
 	if err := row.Scan(&parking.Name, &parking.Description, &parking.Coordinates); err != nil {
@@ -30,9 +30,23 @@ func (pr *parkingRepository) Get(uuid uuid.UUID) (*model.Parking, error) {
 	}
 
 	return &model.Parking{
-		ID:          uuid,
+		ID:          id,
 		Name:        parking.Name,
 		Description: parking.Description,
 		Coordinates: parking.Coordinates,
 	}, nil
+}
+
+func (pr *parkingRepository) Add(parking *model.Parking) error {
+	if _, err := pr.db.Exec(
+		"INSERT INTO `parking` (`id`, `name`, `description`, `coordinates`) VALUES (?, ?, ?, ?)",
+		parking.ID.String(),
+		parking.Name,
+		parking.Description,
+		parking.Coordinates,
+	); err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

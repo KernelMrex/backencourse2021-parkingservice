@@ -8,3 +8,28 @@ services:
       - "8000:8000"
     environment:
       SERVE_ADDRESS: ":8000"
+      MYSQL_HOST: "parkinglistservice_db"
+      MYSQL_PORT: 3316
+      MYSQL_DATABASE: "db_name"
+      MYSQL_USER: "user"
+      MYSQL_PASSWORD: "password"
+    depends_on:
+      - "parkinglistservice_db"
+
+  parkinglistservice_db:
+    container_name: "parkinglistservice_db"
+    image: "percona:8.0"
+    restart: "always"
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+      MYSQL_DATABASE: "db_name"
+      MYSQL_USER: "user"
+      MYSQL_PASSWORD: "password"
+    ports:
+    - "3316:3306"
+    volumes:
+      - parkinglistservice_db_volume:/var/lib/mysql
+    cap_add: [ "SYS_NICE" ]
+
+volumes:
+  parkinglistservice_db_volume:

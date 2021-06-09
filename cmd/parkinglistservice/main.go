@@ -1,60 +1,74 @@
 package main
 
 import (
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/kelseyhightower/envconfig"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"net"
 	"os"
-	"os/signal"
 	parking "parkinglistservice/api/parkinglistservice"
 	"parkinglistservice/pkg/parkinglistservice/infrastructure/repository"
 	"parkinglistservice/pkg/parkinglistservice/infrastructure/transport"
-	"syscall"
 )
+
+const appID = "parkingservice"
+
+type config struct {
+	GRPCServeAddress string `envconfig:"serve_address"`
+	DBUser           string `envconfig:"mysql_user"`
+	DBPassword       string `envconfig:"mysql_password"`
+	DBHost           string `envconfig:"mysql_host"`
+	DBPort           int    `envconfig:"mysql_port"`
+	DBDBName         string `envconfig:"mysql_database"`
+}
 
 func main() {
 	log.SetFormatter(&log.JSONFormatter{})
 	log.SetOutput(os.Stdout)
 
-	log.Info("Server is starting...")
-	server := startServer(os.Getenv("SERVE_ADDRESS"), transport.NewGRPCServer(repository.NewParkingRepository(nil)))
-	log.Info("Server is running")
+	var c config
+	if err := envconfig.Process(appID, &c); err != nil {
+		log.Fatalf("could not parsing config: %v", err)
+	}
+
+	log.Info("Connecting to database")
+	dbConn, err := createDBConnection(&DBConnectionProperties{
+		DriverName: "mysql",
+		User:       c.DBUser,
+		Password:   c.DBPassword,
+		Host:       c.DBHost,
+		Port:       c.DBPort,
+		DBName:     c.DBDBName,
+	})
+	if err != nil {
+		log.Fatalf("could not connect database: %v", err)
+	}
+
+	srv := transport.NewGRPCServer(repository.NewParkingRepository(dbConn))
+
+	log.Info("Server is starting")
+	grpcServer := startServer(c.GRPCServeAddress, srv)
+
 	waitForKillSignal(getKillSignalChan())
-	log.Info("Server is stopping...")
-	server.GracefulStop()
-	log.Info("Server has stopped")
+	log.Info("Server is stopping")
+	grpcServer.GracefulStop()
 }
 
 func startServer(serveURL string, srv *transport.GRPCServer) *grpc.Server {
-	baseServer := grpc.NewServer()
-	parking.RegisterParkingListServiceServer(baseServer, srv)
+	grpcServer := grpc.NewServer()
+	parking.RegisterParkingListServiceServer(grpcServer, srv)
 
 	listener, err := net.Listen("tcp", serveURL)
 	if err != nil {
-		log.Errorf("failed to listen: %v", err)
+		log.Fatalf("failed to listen: %v", err)
 	}
 
 	go func() {
-		if err := baseServer.Serve(listener); err != nil {
-			log.Errorf("failed to serve: %v", err)
+		if err := grpcServer.Serve(listener); err != nil {
+			log.Fatalf("failed to serve: %v", err)
 		}
 	}()
 
-	return baseServer
-}
-
-func getKillSignalChan() chan os.Signal {
-	osKillSignalChan := make(chan os.Signal, 1)
-	signal.Notify(osKillSignalChan, os.Interrupt, syscall.SIGTERM)
-	return osKillSignalChan
-}
-
-func waitForKillSignal(killSignalChan <-chan os.Signal) {
-	killSignal := <-killSignalChan
-	switch killSignal {
-	case os.Interrupt:
-		log.Info("got SIGINT...")
-	case syscall.SIGTERM:
-		log.Info("got SIGTERM...")
-	}
+	return grpcServer
 }

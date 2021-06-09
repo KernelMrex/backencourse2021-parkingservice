@@ -11,4 +11,5 @@ type Parking struct {
 
 type ParkingRepository interface {
 	Get(id uuid.UUID) (*Parking, error)
+	Add(parking *Parking) error
 }

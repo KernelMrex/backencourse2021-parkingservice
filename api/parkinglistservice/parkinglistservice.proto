@@ -17,6 +17,17 @@ message GetParkingResponse {
   int64 reserved_slots = 6;
 }
 
+message AddParkingRequest {
+  string title = 1;
+  string description = 2;
+  string location = 3;
+}
+
+message AddParkingResponse {
+  string id = 1;
+}
+
 service ParkingListService {
   rpc GetParking (GetParkingRequest) returns (GetParkingResponse) {};
+  rpc AddParking (AddParkingRequest) returns (AddParkingResponse) {};
 }
